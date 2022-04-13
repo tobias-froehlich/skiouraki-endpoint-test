@@ -3,12 +3,18 @@ import json
 import requests
 import base64
 
-#url = "http://localhost:8090/"
-url = "https://aqueous-peak-70993.herokuapp.com/"
+url = "http://localhost:8090/"
 
-def doGet(path, headers={}, withAuth=()):
+def doGet(path, headers={}, withAuth=(), expectError=False):
     if withAuth:
         (id, password) = withAuth
+        if not expectError:
+            headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
+            error = requests.get(url + path, headers=headers).text
+            assert error == "Wrong credentials."
+            headers['Authorization'] = makeAuthHeader('wrong-id', password)
+            error = requests.get(url + path, headers=headers).text
+            assert error == "Wrong credentials."
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.get(url + path, headers=headers)
     if res.ok:
@@ -19,10 +25,18 @@ def doGet(path, headers={}, withAuth=()):
     else:
         return res.text
 
-def doPost(path, payload, withAuth=()):
+
+def doPost(path, payload, withAuth=(), expectError=False):
     headers = {'Content-type': 'application/json'}
     if withAuth:
         (id, password) = withAuth
+        if not expectError:
+            headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
+            error = requests.post(url + path, data=payload, headers=headers).text
+            assert error == "Wrong credentials."
+            headers['Authorization'] = makeAuthHeader('wrong-id', password)
+            error = requests.post(url + path, data=payload, headers=headers).text
+            assert error == "Wrong credentials."
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.post(url + path, data=payload, headers=headers)
     if res.ok:
@@ -43,7 +57,7 @@ r = doGet("user/get-all")
 assert len(r) == 0
 
 
-# Add user Joe
+print("Add user Joe")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -55,7 +69,7 @@ assert userFromDb['name'] == "Joe"
 assert userFromDb['password'] == "joes-password"
 idJoe = userFromDb['id']
 
-# Try to add user Joe again
+print("Try to add user Joe again")
 error = doPost("user/add", json.dumps({
     "id": None,
     "version": None,
@@ -64,20 +78,20 @@ error = doPost("user/add", json.dumps({
 }))
 assert error == "Cannot insert user. User with name Joe already exists."
 
-# Read user Joe
+print("Read user Joe")
 user = doGet("user/get/" + idJoe, withAuth=(idJoe, "joes-password"))
 assert equals(user, userFromDb)
 
-# Get user Joe by name
+print("Get user Joe by name")
 userId = doGet("user/get-by-name/Joe")
 assert userId == idJoe
 
-# Get user Joe by different spelling
+print("Get user Joe by different spelling")
 userId = doGet("user/get-by-name/joe")
 assert userId == idJoe
 
 
-# Add user with greek letters
+print("Add user with greek letters")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -92,15 +106,15 @@ userId = doGet("user/get-by-name/λambdα")
 assert userId == id
 
 
-# Get user with greek letters with different spelling
+print("Get user with greek letters with different spelling")
 userId = doGet("user/get-by-name/lamBDa")
 assert userId == id
 
-# Try to get user that does not exist by name
+print("Try to get user that does not exist by name")
 error = doGet("user/get-by-name/notexistingname")
 assert error == "User not found."
 
-# Add user with maximum length name
+print("Add user with maximum length name")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -111,9 +125,9 @@ addedUser = doPost("user/add", newUser)
 assert addedUser['name'] == "abcdefghijklmnop"
 assert addedUser['password'] == "my-password"
 id = addedUser['id']
-user = doGet("user/get-by-name/abcdefghijklmnop", withAuth=(id, "my-password"))
+user = doGet("user/get-by-name/abcdefghijklmnop")
 
-# Try to add user with too long name
+print("Try to add user with too long name")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -124,11 +138,11 @@ error = doPost("user/add", newUser)
 assert error == "Invalid user name."
 
 
-# Read non existing user
-error = doGet("user/get/gibtsnicht", withAuth=(idJoe, "joes-password"))
+print("Read non existing user")
+error = doGet("user/get/gibtsnicht", withAuth=(idJoe, "joes-password"), expectError=True)
 assert error == "User with id = gibtsnicht not found."
 
-# Try to add Joe again
+print("Try to add Joe again")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -139,7 +153,7 @@ error = doPost("user/add", newUser)
 assert error == "Cannot insert user. User with name Joe already exists."
 
 
-# Add user John
+print("Add user John")
 newUser = json.dumps({
     "id": None,
     "version": None,
@@ -151,23 +165,23 @@ assert userFromDb['name'] == "John"
 assert userFromDb['password'] == "johns-password"
 idJohn = userFromDb['id']
 
-# Read user John
+print("Read user John")
 user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
 assert equals(user, userFromDb)
 
-# Try to update John's Password without Authentication
+print("Try to update John's Password without Authentication")
 user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
 user['password'] = "johns-new-password"
 error = doPost("user/update/" + idJohn, json.dumps(user))
 assert error == "Authentication header is missing."
 
-# Try to update John's Password with wrong password
+print("Try to update John's Password with wrong password")
 user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
 user['password'] = "johns-new-password"
 error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "joes-password"))
 assert error == "Wrong credentials."
 
-# Update John's Password
+print("Update John's Password")
 user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
 user['password'] = "johns-new-password"
 updatedJohn = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-password"))
@@ -176,7 +190,7 @@ assert updatedJohn['version'] != user['version']
 assert updatedJohn['name'] == "John"
 assert updatedJohn['password'] == "johns-new-password"
 
-# Try to update again with outdated version
+print("Try to update again with outdated version")
 user['password'] = 'johns-password'
 error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-new-password"))
 assert error == "The user does not exist or the version is outdated."
