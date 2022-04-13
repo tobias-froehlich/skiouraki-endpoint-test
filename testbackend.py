@@ -2,56 +2,12 @@ import deepdiff
 import json
 import requests
 import base64
-
-url = "http://localhost:8090/"
-
-def doGet(path, headers={}, withAuth=(), expectError=False):
-    if withAuth:
-        (id, password) = withAuth
-        if not expectError:
-            headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
-            error = requests.get(url + path, headers=headers).text
-            assert error == "Wrong credentials."
-            headers['Authorization'] = makeAuthHeader('wrong-id', password)
-            error = requests.get(url + path, headers=headers).text
-            assert error == "Wrong credentials."
-        headers['Authorization'] = makeAuthHeader(id, password)
-    res = requests.get(url + path, headers=headers)
-    if res.ok:
-        try:
-            return res.json()
-        except:
-            return res.text
-    else:
-        return res.text
+from utils import doGet, doPost, equals
+from const import URL
 
 
-def doPost(path, payload, withAuth=(), expectError=False):
-    headers = {'Content-type': 'application/json'}
-    if withAuth:
-        (id, password) = withAuth
-        if not expectError:
-            headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
-            error = requests.post(url + path, data=payload, headers=headers).text
-            assert error == "Wrong credentials."
-            headers['Authorization'] = makeAuthHeader('wrong-id', password)
-            error = requests.post(url + path, data=payload, headers=headers).text
-            assert error == "Wrong credentials."
-        headers['Authorization'] = makeAuthHeader(id, password)
-    res = requests.post(url + path, data=payload, headers=headers)
-    if res.ok:
-        return res.json()
-    else:
-        return res.text
 
-def equals(a, b):
-    return deepdiff.DeepDiff(a, b) == {}
-
-def makeAuthHeader(id, password):
-    credentials = base64.b64encode((id + ":" + password).encode()).decode()
-    return "Basic " + credentials
-
-requests.post(url + "user/reset")
+requests.post(URL + "user/reset")
 
 r = doGet("user/get-all")
 assert len(r) == 0
