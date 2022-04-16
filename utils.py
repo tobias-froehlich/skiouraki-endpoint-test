@@ -43,6 +43,27 @@ def doPost(path, payload, withAuth=(), expectError=False):
     else:
         return res.text
 
+def doDelete(path, headers={}, withAuth=(), expectError=False):
+    if withAuth:
+        (id, password) = withAuth
+        if not expectError:
+            headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
+            error = requests.delete(URL + path, headers=headers).text
+            assert error == "Wrong credentials."
+            headers['Authorization'] = makeAuthHeader('wrong-id', password)
+            error = requests.delete(URL + path, headers=headers).text
+            assert error == "Wrong credentials."
+        headers['Authorization'] = makeAuthHeader(id, password)
+    res = requests.delete(URL + path, headers=headers)
+    if res.ok:
+        try:
+            return res.json()
+        except:
+            return res.text
+    else:
+        return res.text
+
+
 def equals(a, b):
     return deepdiff.DeepDiff(a, b) == {}
 
