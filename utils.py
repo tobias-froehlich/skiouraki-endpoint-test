@@ -13,7 +13,7 @@ def doGet(path, headers={}, withAuth=(), expectError=False):
             assert error == "Wrong credentials."
             headers['Authorization'] = makeAuthHeader('wrong-id', password)
             error = requests.get(URL + path, headers=headers).text
-            assert error == "Wrong credentials."
+            assert error in ["Wrong credentials.", "User not found."]
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.get(URL + path, headers=headers)
     if res.ok:
@@ -35,11 +35,14 @@ def doPost(path, payload, withAuth=(), expectError=False):
             assert error == "Wrong credentials."
             headers['Authorization'] = makeAuthHeader('wrong-id', password)
             error = requests.post(URL + path, data=payload, headers=headers).text
-            assert error == "Wrong credentials."
+            assert error in ["Wrong credentials.", "User not found."]
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.post(URL + path, data=payload, headers=headers)
     if res.ok:
-        return res.json()
+        if res.text:
+            return res.json()
+        else:
+            return "ok"
     else:
         return res.text
 
@@ -52,7 +55,7 @@ def doDelete(path, headers={}, withAuth=(), expectError=False):
             assert error == "Wrong credentials."
             headers['Authorization'] = makeAuthHeader('wrong-id', password)
             error = requests.delete(URL + path, headers=headers).text
-            assert error == "Wrong credentials."
+            assert error in ["Wrong credentials.", "User not found."]
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.delete(URL + path, headers=headers)
     if res.ok:
@@ -66,6 +69,18 @@ def doDelete(path, headers={}, withAuth=(), expectError=False):
 
 def equals(a, b):
     return deepdiff.DeepDiff(a, b) == {}
+
+def equalsInAnyOrder(listA, listB):
+    if len(listA) != len(listB):
+        return False
+    for a in listA:
+        found = False
+        for b in listB:
+            if equals(a, b):
+                found = True
+        if not found:
+            return False
+    return True
 
 def makeAuthHeader(id, password):
     credentials = base64.b64encode((id + ":" + password).encode()).decode()

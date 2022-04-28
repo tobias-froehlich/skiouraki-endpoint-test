@@ -35,7 +35,7 @@ error = doPost("user/add", json.dumps({
 assert error == "The user name already exists."
 
 print("Read user Joe")
-user = doGet("user/get/" + idJoe, withAuth=(idJoe, "joes-password"))
+user = doGet("user/get/" + idJoe)
 assert equals(user, userFromDb)
 
 print("Get user Joe by name")
@@ -144,23 +144,23 @@ assert userFromDb['password'] == None
 idJohn = userFromDb['id']
 
 print("Read user John")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
+user = doGet("user/get/" + idJohn)
 assert equals(user, userFromDb)
 
 print("Try to update John's Password without Authentication")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "johns-new-password"
 error = doPost("user/update/" + idJohn, json.dumps(user))
 assert error == "Authentication header is missing."
 
 print("Try to update John's Password with wrong password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "johns-new-password"
 error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "joes-password"))
 assert error == "Wrong credentials."
 
 print("Update John's Password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-password"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "johns-new-password"
 updatedJohn = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-password"))
 assert updatedJohn['id'] == idJohn
@@ -172,37 +172,37 @@ print("Try to update again with outdated version")
 user['password'] = 'johns-password'
 error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-new-password"))
 assert error == "The version is outdated."
-oldJohn = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-new-password"))
+oldJohn = doGet("user/get/" + idJohn)
 assert equals(oldJohn, updatedJohn)
 
 print("Update John's password with maximum length password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "johns-new-password"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "01234567890123456789012345678901"
 updatedJohn = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-new-password"))
 assert updatedJohn['id'] == idJohn
 assert updatedJohn['version'] != user['version']
 assert updatedJohn['name'] == "John"
 assert updatedJohn['password'] == None
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "0123456789012345678901234567890"));
+user = doGet("user/get/" + idJohn);
 
 print("Try to update John's password with too long password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "01234567890123456789012345678901"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "012345678901234567890123456789012"
-error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "01234567890123456789012345678901"))
-assert error == "Invalid password."
+error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "johns-new-password"))
+assert error == "Wrong credentials."
 
 print("Update John's password with minimum length password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "01234567890123456789012345678901"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "0123"
 updatedJohn = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "01234567890123456789012345678901"))
 assert updatedJohn['id'] == idJohn
 assert updatedJohn['version'] != user['version']
 assert updatedJohn['name'] == "John"
 assert updatedJohn['password'] == None
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "0123456789012345678901234567890"));
+user = doGet("user/get/" + idJohn);
 
 print("Try to update John's password with too short password")
-user = doGet("user/get/" + idJohn, withAuth=(idJohn, "0123"))
+user = doGet("user/get/" + idJohn)
 user['password'] = "012"
 error = doPost("user/update/" + idJohn, json.dumps(user), withAuth=(idJohn, "0123"))
 assert error == "Invalid password."
@@ -222,7 +222,7 @@ assert userFromDb['password'] == None
 idJimmy = userFromDb['id']
 
 print("Read this User")
-user = doGet("user/get/" + idJimmy, withAuth=(idJimmy, "jimmys:password"))
+user = doGet("user/get/" + idJimmy)
 assert equals(user, userFromDb)
 
 print("Update Jimmy's name")
@@ -247,7 +247,7 @@ newJummy = json.dumps({
 })
 updatedJummy = doPost("user/update/" + idJimmy, newJummy, withAuth=(idJimmy, "jimmys:password"))
 assert updatedJummy["name"] == "jUMMY"
-jummyFromDb = doGet("user/get/" + idJimmy, withAuth=(idJimmy, "jimmys:password"))
+jummyFromDb = doGet("user/get/" + idJimmy)
 assert jummyFromDb["name"] == "jUMMY"
 
 print("Delete John")
@@ -267,6 +267,6 @@ addedUser = doPost("user/add/", newJohn)
 assert addedUser["id"] != idJohn
 assert addedUser["name"] == "John"
 assert addedUser["password"] == None
-userFromDb = doGet("user/get/" + addedUser["id"], withAuth=(addedUser["id"], "my-password"))
+userFromDb = doGet("user/get/" + addedUser["id"])
 assert equals(addedUser, userFromDb)
 
