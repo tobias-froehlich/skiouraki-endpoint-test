@@ -219,5 +219,4 @@ assert error == "Invitation not found."
 
 print("John tries to read Jack's first shopping list.")
 error = doGet("shopping-list/get/" + jacksFirstShoppingList["id"], withAuth=johnsAuth, expectError=True)
-print(error)
 assert error == "Not authorized."
