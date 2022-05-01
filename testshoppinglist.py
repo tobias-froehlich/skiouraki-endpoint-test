@@ -169,6 +169,14 @@ print("Jack assures that he now has only two.")
 jacksOwnShoppingLists = doGet("shopping-list/get-own", withAuth=jacksAuth)
 assert equalsInAnyOrder(jacksOwnShoppingLists, [jacksFirstShoppingList, jacksSecondShoppingList])
 
+print("Jack tries to invite a user that does not exist.")
+error = doPost("shopping-list/invite/" + jacksFirstShoppingList["id"] + "/" + "notexisting-id", None, withAuth=jacksAuth, expectError=True)
+assert error == "User not found."
+
+print("Jack tries to invite John to a shopping list that does not exist.")
+error  = doPost("shopping-list/invite/" + "notexisting-id" + "/" + john["id"], None, withAuth=jacksAuth, expectError=True)
+assert error == "ShoppingList not found."
+
 print("Joe tries to invite John to Jack's first shopping list.")
 error = doPost("shopping-list/invite/" + jacksFirstShoppingList["id"] + "/" + john["id"], None, withAuth=joesAuth)
 assert error == "ShoppingList not found."
@@ -180,6 +188,14 @@ assert error == "Not authorized."
 print("Jack invites john to his first shopping list.")
 invitedUsers = doPost("shopping-list/invite/" + jacksFirstShoppingList["id"] + "/" + john["id"], None, withAuth=jacksAuth)
 assert equalsInAnyOrder(invitedUsers, [john])
+
+print("Jack reads the invited users of his first shopping list.")
+invitedUsers = doGet("shopping-list/get-invitations-by-shopping-list/" + jacksFirstShoppingList["id"], withAuth=jacksAuth)
+assert equalsInAnyOrder(invitedUsers, [john])
+
+print("Joe tries to read the invited users of Jack's first shopping list.")
+invitedUsers = doGet("shopping-list/get-invitations-by-shopping-list/" + jacksFirstShoppingList["id"], withAuth=joesAuth)
+assert equalsInAnyOrder(invitedUsers, [])
 
 print("John tries to read Jack's first shopping list.")
 error = doGet("shopping-list/get/" + jacksFirstShoppingList["id"], withAuth=johnsAuth)
@@ -220,3 +236,54 @@ assert error == "Invitation not found."
 print("John tries to read Jack's first shopping list.")
 error = doGet("shopping-list/get/" + jacksFirstShoppingList["id"], withAuth=johnsAuth, expectError=True)
 assert error == "Not authorized."
+
+print("Jack creates a new user account.")
+jack = json.dumps({
+    "id": None,
+    "version": None,
+    "name": "Jack",
+    "password": "jacks-password",
+})
+jack = doPost("user/add", jack)
+jacksAuth = (jack["id"], "jacks-password")
+
+print("John creates a shopping list, invites Joe and he accepts.")
+shoppingList = json.dumps({
+    "id": None,
+    "version": None,
+    "name": "John's new shopping list",
+    "owner": None,
+})
+johnsShoppingList = doPost("shopping-list/add", shoppingList, withAuth=johnsAuth)
+assert johnsShoppingList["name"] == "John's new shopping list"
+invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(invitedUsers, [joe])
+doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth)
+shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
+assert equals(shoppingList, johnsShoppingList)
+
+print("Jack tries to remove Joe from John's shopping list.")
+error = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=jacksAuth, expectError=True)
+print(error)
+assert error == "Cannot leave ShoppingList."
+shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
+assert equals(shoppingList, johnsShoppingList)
+
+print("John removes Joe from that shopping list.")
+members = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(members, [john])
+error = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth, expectError=True)
+assert error == "Not authorized."
+
+print("John invites Joe again and he accepts again.")
+invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(invitedUsers, [joe])
+doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth)
+shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
+assert equals(shoppingList, johnsShoppingList)
+
+print("Joe leaves the shopping list.")
+doPost("shopping-list/leave-shopping-list/" + johnsShoppingList["id"], None, withAuth=joesAuth)
+error = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth, expectError=True)
+assert error == "Not authorized."
+

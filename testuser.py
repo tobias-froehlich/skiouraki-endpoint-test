@@ -34,6 +34,10 @@ error = doPost("user/add", json.dumps({
 }))
 assert error == "The user name already exists."
 
+print("Authenticate user Joe")
+user = doGet("user/authenticate/" + idJoe, withAuth=(idJoe, "joes-password"))
+assert equals(user, userFromDb)
+
 print("Read user Joe")
 user = doGet("user/get/" + idJoe)
 assert equals(user, userFromDb)
@@ -142,6 +146,10 @@ userFromDb = doPost("user/add", newUser)
 assert userFromDb['name'] == "John"
 assert userFromDb['password'] == None
 idJohn = userFromDb['id']
+
+print("Try to authenticate user Joe as John")
+error = doGet("user/authenticate/" + idJoe, withAuth=(idJohn, "johns-password"), expectError=True)
+assert error == "Wrong credentials."
 
 print("Read user John")
 user = doGet("user/get/" + idJohn)
