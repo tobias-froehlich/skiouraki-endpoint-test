@@ -5,6 +5,12 @@ import base64
 from utils import doGet, doPost, doDelete, equals, equalsInAnyOrder
 from const import URL
 
+def shoppingListsEqualButVersionsDiffer(shoppingList1, shoppingList2):
+    return shoppingList1["id"] == shoppingList2["id"] \
+       and shoppingList1["version"] != shoppingList2["version"] \
+       and shoppingList1["name"] == shoppingList2["name"] \
+       and shoppingList1["owner"] == shoppingList2["owner"]
+
 requests.post(URL + "user/reset")
 r = doGet("user/get-all")
 assert len(r) == 0
@@ -207,7 +213,7 @@ assert result == "ok"
 
 print("John reads Jack's first shopping list.")
 shoppingList = doGet("shopping-list/get/" + jacksFirstShoppingList["id"], withAuth=johnsAuth)
-assert equals(shoppingList, jacksFirstShoppingList)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, jacksFirstShoppingList)
 
 print("John tries to invite Joe to Jack's first shopping list.")
 error = doPost("shopping-list/invite/" + jacksFirstShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
@@ -260,13 +266,13 @@ invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + 
 assert equalsInAnyOrder(invitedUsers, [joe])
 doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth)
 shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
-assert equals(shoppingList, johnsShoppingList)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, johnsShoppingList)
 
 print("Jack tries to remove Joe from John's shopping list.")
 error = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=jacksAuth, expectError=True)
 assert error == "Cannot leave ShoppingList."
 shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
-assert equals(shoppingList, johnsShoppingList)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, johnsShoppingList)
 
 print("John tries to remove himself from his shopping list.")
 error = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + john["id"], None, withAuth=johnsAuth, expectError=True)
@@ -283,7 +289,7 @@ invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + 
 assert equalsInAnyOrder(invitedUsers, [joe])
 doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth)
 shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
-assert equals(shoppingList, johnsShoppingList)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, johnsShoppingList)
 
 print("Joe leaves the shopping list.")
 doPost("shopping-list/leave-shopping-list/" + johnsShoppingList["id"], None, withAuth=joesAuth)
