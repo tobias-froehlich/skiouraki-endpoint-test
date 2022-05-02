@@ -264,10 +264,13 @@ assert equals(shoppingList, johnsShoppingList)
 
 print("Jack tries to remove Joe from John's shopping list.")
 error = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=jacksAuth, expectError=True)
-print(error)
 assert error == "Cannot leave ShoppingList."
 shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
 assert equals(shoppingList, johnsShoppingList)
+
+print("John tries to remove himself from his shopping list.")
+error = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + john["id"], None, withAuth=johnsAuth, expectError=True)
+assert error == "Cannot leave ShoppingList."
 
 print("John removes Joe from that shopping list.")
 members = doPost("shopping-list/remove-user-from-shopping-list/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
