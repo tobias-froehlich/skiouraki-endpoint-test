@@ -296,3 +296,30 @@ doPost("shopping-list/leave-shopping-list/" + johnsShoppingList["id"], None, wit
 error = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth, expectError=True)
 assert error == "Not authorized."
 
+print("John invites Joe again.")
+invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(invitedUsers, [joe])
+
+print("John withdraws the invitation.")
+invitedUsers = doPost("shopping-list/withdraw-invitation/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(invitedUsers, [])
+
+print("Joe tries to accept the invitation.")
+error = doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth, expectError=True)
+assert error == "Invitation not found."
+
+print("John invites Joe again and he accepts again.")
+invitedUsers = doPost("shopping-list/invite/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+assert equalsInAnyOrder(invitedUsers, [joe])
+doPost("shopping-list/accept-invitation/" + johnsShoppingList["id"], None, withAuth=joesAuth)
+shoppingList = doGet("shopping-list/get/" + johnsShoppingList["id"], withAuth=joesAuth)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, johnsShoppingList)
+
+
+print("John tries to withdraw the invitation.")
+error = doPost("shopping-list/withdraw-invitation/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
+print(error)
+assert error == "Cannot withdraw invitation because it was not found."
+
+
+
