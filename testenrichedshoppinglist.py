@@ -44,6 +44,12 @@ def enrichedShoppingListsEqualButVersionsDiffer(enrichedShoppingList1, enrichedS
       and  equalsInAnyOrder(enrichedShoppingList1["invitedUsers"], enrichedShoppingList2["invitedUsers"]) \
       and itemListsEqual(enrichedShoppingList1["items"], enrichedShoppingList2["items"])
 
+def shoppingListsEqualButVersionsDiffer(enrichedShoppingList1, enrichedShoppingList2):
+    return enrichedShoppingList1["id"] == enrichedShoppingList2["id"] \
+      and  enrichedShoppingList1["version"] != enrichedShoppingList2["version"] \
+      and  enrichedShoppingList1["name"] == enrichedShoppingList2["name"] \
+      and  enrichedShoppingList1["owner"] == enrichedShoppingList2["owner"]
+
 
 requests.post(URL + "user/reset")
 r = doGet("user/get-all")
@@ -238,7 +244,7 @@ assert len(enrichedShoppingList["items"]) == 2
 enrichedShoppingList = doGet("shopping-list/get-enriched/" + jacksShoppingList["id"], withAuth=jacksAuth)
 assert len(enrichedShoppingList["items"]) == 2
 
-print("Jack adds an item with maximal length name.")
+print("Jack adds an item with minimal length name.")
 item = json.dumps({
     "id": "", 
     "version": "",
@@ -257,6 +263,91 @@ print("John reads Jack's shopping list.")
 oldEnrichedShoppingList = enrichedShoppingList
 enrichedShoppingList = doGet("shopping-list/get-enriched/" + jacksShoppingList["id"], withAuth=johnsAuth)
 assert enrichedShoppingListsEqual(enrichedShoppingList, oldEnrichedShoppingList)
+
+
+print("Jack creates a new shopping list.")
+newShoppingList = json.dumps({
+    "id": None,
+    "version": None,
+    "name": "Our shopping list",
+    "owner": None,
+})
+newShoppingList = doPost("shopping-list/add", newShoppingList, withAuth=jacksAuth)
+assert newShoppingList["name"] == "Our shopping list"
+
+print("Jack invites John to this shopping list and John accepts.")
+invitedUsers = doPost("shopping-list/invite/" + newShoppingList["id"] + "/" + john["id"], None, withAuth=jacksAuth)
+assert invitedUsers == [john]
+doPost("shopping-list/accept-invitation/" + newShoppingList["id"], None, withAuth=johnsAuth)
+shoppingList = doGet("shopping-list/get/" + newShoppingList["id"], withAuth=johnsAuth)
+assert shoppingListsEqualButVersionsDiffer(shoppingList, newShoppingList)
+
+print("Jack adds an item to the new shopping list.")
+item = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "1",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+
+
+print("Joe tries to set the item to bought.")
+error = doPost("shopping-list/set-bought/" + newShoppingList["id"], json.dumps(item), withAuth=joesAuth)
+assert error == "ShoppingList not found."
+enrichedShoppingList = doGet("shopping-list/get-enriched/" + newShoppingList["id"], withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == None
+assert item["stateChangedBy"] == jack["id"]
+
+
+print("Jack sets the item to bought.")
+enrichedShoppingList = doPost("shopping-list/set-bought/" + newShoppingList["id"], json.dumps(item), withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == jack["id"]
+assert item["stateChangedBy"] == jack["id"]
+
+print("John tries to set the item to bought again.")
+error = doPost("shopping-list/set-bought/" + newShoppingList["id"], json.dumps(item), withAuth=johnsAuth)
+assert error == "Cannot set ShoppingListItem to state bought."
+enrichedShoppingList = doGet("shopping-list/get-enriched/" + newShoppingList["id"], withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == jack["id"]
+assert item["stateChangedBy"] == jack["id"]
+
+print("Joe tries to set the item to unbought.")
+error = doPost("shopping-list/set-unbought/" + newShoppingList["id"], json.dumps(item), withAuth=joesAuth)
+assert error == "ShoppingList not found."
+enrichedShoppingList = doGet("shopping-list/get-enriched/" + newShoppingList["id"], withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == jack["id"]
+assert item["stateChangedBy"] == jack["id"]
+
+print("John sets the item to unbought.")
+enrichedShoppingList = doPost("shopping-list/set-unbought/" + newShoppingList["id"], json.dumps(item), withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == None
+assert item["stateChangedBy"] == john["id"]
+
+print("Jack tries to set the item to unbought again.")
+error = doPost("shopping-list/set-unbought/" + newShoppingList["id"], json.dumps(item), withAuth=jacksAuth)
+assert error == "Cannot set ShoppingListItem to state unbought."
+enrichedShoppingList = doGet("shopping-list/get-enriched/" + newShoppingList["id"], withAuth=jacksAuth)
+assert len(enrichedShoppingList["items"]) == 1
+item = enrichedShoppingList["items"][0]
+assert item["boughtBy"] == None
+assert item["stateChangedBy"] == john["id"]
+
 
 
 print("Jack deletes his user account.")
