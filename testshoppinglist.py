@@ -318,7 +318,6 @@ assert shoppingListsEqualButVersionsDiffer(shoppingList, johnsShoppingList)
 
 print("John tries to withdraw the invitation.")
 error = doPost("shopping-list/withdraw-invitation/" + johnsShoppingList["id"] + "/" + joe["id"], None, withAuth=johnsAuth)
-print(error)
 assert error == "Cannot withdraw invitation because it was not found."
 
 
