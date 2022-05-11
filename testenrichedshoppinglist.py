@@ -356,3 +356,30 @@ deletedUser = doDelete("user/delete/" + jack["id"], withAuth=jacksAuth)
 print("John tries to read Jack's shopping list.")
 error = doGet("shopping-list/get-enriched/" + jacksShoppingList["id"], withAuth=johnsAuth)
 assert error == "ShoppingList not found."
+
+print("John creates a shopping list.")
+newShoppingList = json.dumps({
+    "id": None,
+    "version": None,
+    "name": "Johns shopping list",
+    "owner": None,
+})
+newShoppingList = doPost("shopping-list/add", newShoppingList, withAuth=johnsAuth)
+assert newShoppingList["name"] == "Johns shopping list"
+
+print("John adds an item to his shopping list.")
+item = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "Bananen",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 1
+
+print("John deletes the shopping list.")
+deletedShoppingList = doDelete("shopping-list/delete/" + newShoppingList["id"], withAuth=johnsAuth)
+assert shoppingListsEqualButVersionsDiffer(deletedShoppingList, newShoppingList)
