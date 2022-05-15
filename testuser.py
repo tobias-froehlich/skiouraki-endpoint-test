@@ -74,6 +74,25 @@ print("Try to get user that does not exist by name")
 error = doGet("user/get-by-name/notexistingname")
 assert error == "User not found."
 
+
+print("Add user with greek password")
+newUser = json.dumps({
+  "id": None,
+  "version": None,
+  "name": "Γιώργος",
+  "password": "αααα",
+})
+addedUser = doPost("user/add", newUser)
+assert addedUser['name'] == "Γιώργος"
+assert addedUser['password'] == None
+id = addedUser['id']
+userId = doGet("user/get-by-name/giorgos")
+assert userId == id
+
+print("Authenticate user with greek password")
+user = doGet("user/authenticate/" + id, withAuth=(userId, "αααα"))
+assert equals(user, addedUser)
+
 print("Add user with maximum length name")
 newUser = json.dumps({
     "id": None,
