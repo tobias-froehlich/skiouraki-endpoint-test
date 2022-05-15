@@ -7,7 +7,7 @@ from const import URL
 
 
 
-requests.post(URL + "user/reset")
+requests.post(URL + "reset/reset")
 
 r = doGet("user/get-all")
 assert len(r) == 0

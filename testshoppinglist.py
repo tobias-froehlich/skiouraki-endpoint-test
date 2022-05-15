@@ -11,7 +11,7 @@ def shoppingListsEqualButVersionsDiffer(shoppingList1, shoppingList2):
        and shoppingList1["name"] == shoppingList2["name"] \
        and shoppingList1["owner"] == shoppingList2["owner"]
 
-requests.post(URL + "user/reset")
+requests.post(URL + "reset/reset")
 r = doGet("user/get-all")
 assert len(r) == 0
 
