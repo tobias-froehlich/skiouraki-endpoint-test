@@ -371,7 +371,7 @@ print("John adds an item to his shopping list.")
 item = json.dumps({
     "id": "", 
     "version": "",
-    "name": "Bananen",
+    "name": "Äpfel",
     "createdBy": "",
     "modifiedBy": "",
     "boughtBy": "",
@@ -380,6 +380,74 @@ item = json.dumps({
 enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
 assert len(enrichedShoppingList["items"]) == 1
 
+print("John adds a second item to his shopping list.")
+item = json.dumps({
+    "id": "",
+    "version": "",
+    "name": "Bananen",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 2
+
+print("John adds a third item to his shopping list.")
+item = json.dumps({
+    "id": "",
+    "version": "",
+    "name": "Citronen",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 3
+
+print("John adds a fourth item to his shopping list.")
+item = json.dumps({
+    "id": "",
+    "version": "",
+    "name": "Dougnuts",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 4
+
+
+print("John removes the two in the middle.")
+bananen = json.dumps(enrichedShoppingList["items"][1])
+citronen = json.dumps(enrichedShoppingList["items"][2])
+enrichedShoppingList = doPost("shopping-list/remove-item/" + newShoppingList["id"], bananen, withAuth=johnsAuth)
+enrichedShoppingList = doPost("shopping-list/remove-item/" + newShoppingList["id"], citronen, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 2
+
+print("John adds an item again.")
+item = json.dumps({
+    "id": "",
+    "version": "",
+    "name": "Emmentaler",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], item, withAuth=johnsAuth)
+assert len(enrichedShoppingList["items"]) == 3
+assert enrichedShoppingList["items"][0]["name"] == "Äpfel"
+assert enrichedShoppingList["items"][1]["name"] == "Dougnuts"
+assert enrichedShoppingList["items"][2]["name"] == "Emmentaler"
+
+
+
+
 print("John deletes the shopping list.")
 deletedShoppingList = doDelete("shopping-list/delete/" + newShoppingList["id"], withAuth=johnsAuth)
 assert shoppingListsEqualButVersionsDiffer(deletedShoppingList, newShoppingList)
+
+
