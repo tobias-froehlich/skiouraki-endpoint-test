@@ -444,10 +444,90 @@ assert enrichedShoppingList["items"][1]["name"] == "Dougnuts"
 assert enrichedShoppingList["items"][2]["name"] == "Emmentaler"
 
 
-
-
 print("John deletes the shopping list.")
 deletedShoppingList = doDelete("shopping-list/delete/" + newShoppingList["id"], withAuth=johnsAuth)
 assert shoppingListsEqualButVersionsDiffer(deletedShoppingList, newShoppingList)
 
+
+print("John creates a shopping list and adds four items.")
+newShoppingList = json.dumps({
+    "id": None,
+    "version": None,
+    "name": "Johns move test",
+    "owner": None,
+})
+newShoppingList = doPost("shopping-list/add", newShoppingList, withAuth=johnsAuth)
+itemA = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "a",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], itemA, withAuth=johnsAuth)
+itemA = enrichedShoppingList["items"][0]
+itemB = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "b",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], itemB, withAuth=johnsAuth)
+itemB = enrichedShoppingList["items"][1]
+itemC = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "c",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], itemC, withAuth=johnsAuth)
+itemC = enrichedShoppingList["items"][2]
+itemD = json.dumps({
+    "id": "", 
+    "version": "",
+    "name": "d",
+    "createdBy": "",
+    "modifiedBy": "",
+    "boughtBy": "",
+    "stateChangedBy": "",
+})
+enrichedShoppingList = doPost("shopping-list/add-item/" + newShoppingList["id"], itemD, withAuth=johnsAuth)
+itemD = enrichedShoppingList["items"][3]
+assert len(enrichedShoppingList["items"]) == 4
+
+print("John moves the items around.")
+enrichedShoppingList = doPost("shopping-list/move-item-down/" + enrichedShoppingList["id"], json.dumps(itemB), withAuth=johnsAuth)
+assert itemsEqual(enrichedShoppingList["items"][0], itemA)
+assert itemsEqual(enrichedShoppingList["items"][1], itemC)
+assert itemsEqual(enrichedShoppingList["items"][2], itemB)
+assert itemsEqual(enrichedShoppingList["items"][3], itemD)
+enrichedShoppingList = doPost("shopping-list/move-item-down/" + enrichedShoppingList["id"], json.dumps(itemB), withAuth=johnsAuth)
+assert itemsEqual(enrichedShoppingList["items"][0], itemA)
+assert itemsEqual(enrichedShoppingList["items"][1], itemC)
+assert itemsEqual(enrichedShoppingList["items"][2], itemD)
+assert itemsEqual(enrichedShoppingList["items"][3], itemB)
+enrichedShoppingList = doPost("shopping-list/move-item-down/" + enrichedShoppingList["id"], json.dumps(itemB), withAuth=johnsAuth)
+assert itemsEqual(enrichedShoppingList["items"][0], itemA)
+assert itemsEqual(enrichedShoppingList["items"][1], itemC)
+assert itemsEqual(enrichedShoppingList["items"][2], itemD)
+assert itemsEqual(enrichedShoppingList["items"][3], itemB)
+enrichedShoppingList = doPost("shopping-list/move-item-up/" + enrichedShoppingList["id"], json.dumps(itemA), withAuth=johnsAuth)
+assert itemsEqual(enrichedShoppingList["items"][0], itemA)
+assert itemsEqual(enrichedShoppingList["items"][1], itemC)
+assert itemsEqual(enrichedShoppingList["items"][2], itemD)
+assert itemsEqual(enrichedShoppingList["items"][3], itemB)
+doPost("shopping-list/move-item-up/" + enrichedShoppingList["id"], json.dumps(itemB), withAuth=johnsAuth)
+enrichedShoppingList = doPost("shopping-list/move-item-up/" + enrichedShoppingList["id"], json.dumps(itemC), withAuth=johnsAuth)
+assert itemsEqual(enrichedShoppingList["items"][0], itemC)
+assert itemsEqual(enrichedShoppingList["items"][1], itemA)
+assert itemsEqual(enrichedShoppingList["items"][2], itemB)
+assert itemsEqual(enrichedShoppingList["items"][3], itemD)
 

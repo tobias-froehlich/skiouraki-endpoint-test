@@ -32,10 +32,10 @@ def doPost(path, payload, withAuth=(), expectError=False):
         if not expectError:
             headers['Authorization'] = makeAuthHeader(id, 'wrong-password')
             error = requests.post(URL + path, data=payload, headers=headers).text
-            assert error == "Wrong credentials."
+            assert error == "Wrong credentials.", "Wrong error: " + error
             headers['Authorization'] = makeAuthHeader('wrong-id', password)
             error = requests.post(URL + path, data=payload, headers=headers).text
-            assert error in ["Wrong credentials.", "User not found."]
+            assert error in ["Wrong credentials.", "User not found."], "Wrong error: " + error
         headers['Authorization'] = makeAuthHeader(id, password)
     res = requests.post(URL + path, data=payload, headers=headers)
     if res.ok:
